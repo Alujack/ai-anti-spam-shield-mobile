@@ -1,6 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/scan_history.dart';
-import '../services/api_service.dart';
 import 'auth_provider.dart';
 
 // Scan History Provider

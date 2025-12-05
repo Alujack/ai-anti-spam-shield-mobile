@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/scan_result.dart';
-import '../services/api_service.dart';
 import 'auth_provider.dart';
 
 // Current Scan Result Provider

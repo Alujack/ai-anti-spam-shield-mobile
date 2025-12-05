@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # State Management
-  flutter_riverpod: ^2.4.9
+  flutter_riverpod: ^3.0.3
   
   # HTTP Client
   dio: ^5.4.0
@@ -48,14 +48,14 @@ dependencies:
   google_fonts: ^6.1.0
   
   # Animations
-  animate_do: ^3.1.2
+  animate_do: ^4.2.0
   
   # Icons
   flutter_svg: ^2.0.9
   
   # Audio Recording
-  record: ^5.0.4
-  permission_handler: ^11.1.0
+  record: ^6.1.2
+  permission_handler: ^12.0.1
   path_provider: ^2.1.1
 
 dev_dependencies:
@@ -67,7 +67,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

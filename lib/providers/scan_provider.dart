@@ -1,19 +1,81 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/scan_result.dart';
-import 'auth_provider.dart';
+import '../services/api_service.dart';
 
-// Current Scan Result Provider
-final currentScanResultProvider = StateProvider<ScanResult?>((ref) => null);
+// Scan State
+class ScanState {
+  final ScanResult? result;
+  final bool isLoading;
+  final String? error;
 
-// Scan Text Provider
-final scanTextProvider = FutureProvider.family<ScanResult, String>((ref, message) async {
-  final apiService = ref.read(apiServiceProvider);
-  return await apiService.scanText(message);
+  ScanState({
+    this.result,
+    this.isLoading = false,
+    this.error,
+  });
+
+  ScanState copyWith({
+    ScanResult? result,
+    bool? isLoading,
+    String? error,
+  }) {
+    return ScanState(
+      result: result ?? this.result,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
+// Scan Provider
+class ScanNotifier extends StateNotifier<ScanState> {
+  final ApiService _apiService;
+
+  ScanNotifier(this._apiService) : super(ScanState());
+
+  Future<void> scanText(String message) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final result = await _apiService.scanText(message);
+      state = state.copyWith(result: result, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: _apiService.getErrorMessage(e),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> scanVoice(String audioPath) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final result = await _apiService.scanVoice(audioPath);
+      state = state.copyWith(result: result, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: _apiService.getErrorMessage(e),
+      );
+      rethrow;
+    }
+  }
+
+  void clearResult() {
+    state = ScanState();
+  }
+}
+
+final scanProvider = StateNotifierProvider<ScanNotifier, ScanState>((ref) {
+  final apiService = ApiService();
+  return ScanNotifier(apiService);
 });
 
 // Scan Statistics Provider
 final scanStatisticsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final apiService = ref.read(apiServiceProvider);
+  final apiService = ApiService();
   return await apiService.getScanStatistics();
 });
 

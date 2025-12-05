@@ -139,6 +139,23 @@ class ApiService {
     }
   }
 
+  Future<ScanResult> scanVoice(String audioPath) async {
+    try {
+      final formData = FormData.fromMap({
+        'audio': await MultipartFile.fromFile(
+          audioPath,
+          filename: audioPath.split('/').last,
+        ),
+      });
+
+      final response = await _dio.post('/messages/scan-voice', data: formData);
+
+      return ScanResult.fromJson(response.data['data']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> getScanHistory({
     int page = 1,
     int limit = 20,

@@ -52,6 +52,11 @@ dependencies:
   
   # Icons
   flutter_svg: ^2.0.9
+  
+  # Audio Recording
+  record: ^5.0.4
+  permission_handler: ^11.1.0
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:

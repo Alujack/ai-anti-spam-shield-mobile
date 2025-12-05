@@ -4,7 +4,7 @@ class ScanHistory {
   final bool isSpam;
   final double confidence;
   final String prediction;
-  final String scannedAt;
+  final DateTime scannedAt;
   final Map<String, dynamic>? details;
 
   ScanHistory({
@@ -24,7 +24,7 @@ class ScanHistory {
       isSpam: json['isSpam'] ?? false,
       confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
       prediction: json['prediction'] ?? '',
-      scannedAt: json['scannedAt'],
+      scannedAt: DateTime.parse(json['scannedAt']),
       details: json['details'],
     );
   }
@@ -36,7 +36,7 @@ class ScanHistory {
       'isSpam': isSpam,
       'confidence': confidence,
       'prediction': prediction,
-      'scannedAt': scannedAt,
+      'scannedAt': scannedAt.toIso8601String(),
       'details': details,
     };
   }

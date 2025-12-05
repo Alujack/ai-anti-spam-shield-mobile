@@ -1,25 +1,90 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'auth_provider.dart';
+import '../models/scan_history.dart';
+import '../services/api_service.dart';
 
-// Scan History Provider
-final scanHistoryProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>(
-  (ref, params) async {
-    final apiService = ref.read(apiServiceProvider);
-    final page = params['page'] as int? ?? 1;
-    final limit = params['limit'] as int? ?? 20;
-    final isSpam = params['isSpam'] as bool?;
+// History State
+class HistoryState {
+  final List<ScanHistory> histories;
+  final bool isLoading;
+  final String? error;
+  final int currentPage;
+  final bool hasMore;
 
-    return await apiService.getScanHistory(
-      page: page,
-      limit: limit,
-      isSpam: isSpam,
+  HistoryState({
+    this.histories = const [],
+    this.isLoading = false,
+    this.error,
+    this.currentPage = 1,
+    this.hasMore = true,
+  });
+
+  HistoryState copyWith({
+    List<ScanHistory>? histories,
+    bool? isLoading,
+    String? error,
+    int? currentPage,
+    bool? hasMore,
+  }) {
+    return HistoryState(
+      histories: histories ?? this.histories,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+      currentPage: currentPage ?? this.currentPage,
+      hasMore: hasMore ?? this.hasMore,
     );
-  },
-);
+  }
+}
 
-// History Filter Provider
-final historyFilterProvider = StateProvider<bool?>((ref) => null);
+// History Notifier
+class HistoryNotifier extends StateNotifier<HistoryState> {
+  final ApiService _apiService;
 
-// History Page Provider
-final historyPageProvider = StateProvider<int>((ref) => 1);
+  HistoryNotifier(this._apiService) : super(HistoryState());
 
+  Future<void> loadHistory({int page = 1, int limit = 20, bool? isSpam}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final result = await _apiService.getScanHistory(
+        page: page,
+        limit: limit,
+        isSpam: isSpam,
+      );
+      
+      final histories = result['histories'] as List<ScanHistory>;
+      state = state.copyWith(
+        histories: histories,
+        isLoading: false,
+        currentPage: page,
+        hasMore: histories.length >= limit,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: _apiService.getErrorMessage(e),
+      );
+    }
+  }
+
+  Future<void> deleteHistory(String id) async {
+    try {
+      await _apiService.deleteScanHistory(id);
+      state = state.copyWith(
+        histories: state.histories.where((h) => h.id != id).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(error: _apiService.getErrorMessage(e));
+      rethrow;
+    }
+  }
+
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+}
+
+// History Provider
+final historyProvider = StateNotifierProvider<HistoryNotifier, HistoryState>((ref) {
+  final apiService = ApiService();
+  return HistoryNotifier(apiService);
+});

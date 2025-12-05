@@ -9,7 +9,10 @@ class CustomTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final Widget? suffixIcon;
+  final IconData? prefixIcon;
   final int? maxLines;
+  final TextInputAction? textInputAction;
+  final void Function(String)? onFieldSubmitted;
 
   const CustomTextField({
     super.key,
@@ -20,7 +23,10 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType,
     this.validator,
     this.suffixIcon,
+    this.prefixIcon,
     this.maxLines = 1,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -43,8 +49,11 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           validator: validator,
           maxLines: maxLines,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onFieldSubmitted,
           decoration: InputDecoration(
             hintText: hint,
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.textSecondary) : null,
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: AppColors.surface,

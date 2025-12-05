@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'colors.dart';
+import '../utils/colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isLoading;
   final bool isOutlined;
-  final Color? color;
+  final Color? backgroundColor;
+  final IconData? icon;
 
   const CustomButton({
     super.key,
@@ -14,7 +15,8 @@ class CustomButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.isOutlined = false,
-    this.color,
+    this.backgroundColor,
+    this.icon,
   });
 
   @override
@@ -25,11 +27,11 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isOutlined ? Colors.transparent : (color ?? AppColors.primary),
-          foregroundColor: isOutlined ? (color ?? AppColors.primary) : Colors.white,
+          backgroundColor: isOutlined ? Colors.transparent : (backgroundColor ?? AppColors.primary),
+          foregroundColor: isOutlined ? (backgroundColor ?? AppColors.primary) : Colors.white,
           elevation: isOutlined ? 0 : 2,
           side: isOutlined
-              ? BorderSide(color: color ?? AppColors.primary, width: 2)
+              ? BorderSide(color: backgroundColor ?? AppColors.primary, width: 2)
               : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -44,12 +46,21 @@ class CustomButton extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 20),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
       ),
     );

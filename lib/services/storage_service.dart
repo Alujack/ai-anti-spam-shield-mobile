@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
-import 'constants.dart';
+import '../utils/constants.dart';
 
 class StorageService {
   static Future<void> saveToken(String token) async {

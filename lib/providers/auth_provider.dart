@@ -3,40 +3,59 @@ import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
-// API Service Provider
-final apiServiceProvider = Provider((ref) => ApiService());
+// Auth State
+class AuthState {
+  final User? user;
+  final bool isLoading;
+  final String? error;
 
-// Auth State Provider
-final authStateProvider = StateNotifierProvider<AuthNotifier, AsyncValue<User?>>((ref) {
-  return AuthNotifier(ref.read(apiServiceProvider));
-});
+  AuthState({
+    this.user,
+    this.isLoading = false,
+    this.error,
+  });
 
-class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
+// Auth Notifier
+class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _apiService;
 
-  AuthNotifier(this._apiService) : super(const AsyncValue.loading()) {
+  AuthNotifier(this._apiService) : super(AuthState()) {
     _checkAuth();
   }
 
   Future<void> _checkAuth() async {
     try {
       final user = await StorageService.getUser();
-      state = AsyncValue.data(user);
+      state = AuthState(user: user);
     } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+      state = AuthState(error: e.toString());
     }
   }
 
-  Future<void> login(String email, String password) async {
-    state = const AsyncValue.loading();
+  Future<void> login({required String email, required String password}) async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
       final authResponse = await _apiService.login(
         email: email,
         password: password,
       );
-      state = AsyncValue.data(authResponse.user);
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      state = AuthState(user: authResponse.user, isLoading: false);
+    } catch (e) {
+      state = AuthState(isLoading: false, error: _apiService.getErrorMessage(e));
+      rethrow;
     }
   }
 
@@ -46,7 +65,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     String? name,
     String? phone,
   }) async {
-    state = const AsyncValue.loading();
+    state = state.copyWith(isLoading: true, error: null);
     try {
       final authResponse = await _apiService.register(
         email: email,
@@ -54,30 +73,41 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         name: name,
         phone: phone,
       );
-      state = AsyncValue.data(authResponse.user);
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      state = AuthState(user: authResponse.user, isLoading: false);
+    } catch (e) {
+      state = AuthState(isLoading: false, error: _apiService.getErrorMessage(e));
+      rethrow;
     }
   }
 
   Future<void> updateProfile({String? name, String? phone}) async {
     try {
       final user = await _apiService.updateProfile(name: name, phone: phone);
-      state = AsyncValue.data(user);
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      state = state.copyWith(user: user);
+    } catch (e) {
+      state = state.copyWith(error: _apiService.getErrorMessage(e));
+      rethrow;
     }
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    await _apiService.changePassword(
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+    );
   }
 
   Future<void> logout() async {
     await _apiService.logout();
-    state = const AsyncValue.data(null);
+    state = AuthState();
   }
 }
 
-// Loading State Provider
-final loadingProvider = StateProvider<bool>((ref) => false);
-
-// Error Message Provider
-final errorMessageProvider = StateProvider<String?>((ref) => null);
-
+// Auth Provider - named authProvider for use in screens
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final apiService = ApiService();
+  return AuthNotifier(apiService);
+});

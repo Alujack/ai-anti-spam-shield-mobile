@@ -28,12 +28,15 @@ class AuthState {
   }
 }
 
-// Auth Notifier
-class AuthNotifier extends StateNotifier<AuthState> {
-  final ApiService _apiService;
+// Auth Notifier - using Riverpod 3.x Notifier
+class AuthNotifier extends Notifier<AuthState> {
+  late final ApiService _apiService;
 
-  AuthNotifier(this._apiService) : super(AuthState()) {
+  @override
+  AuthState build() {
+    _apiService = ApiService();
     _checkAuth();
+    return AuthState();
   }
 
   Future<void> _checkAuth() async {
@@ -107,7 +110,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 // Auth Provider - named authProvider for use in screens
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final apiService = ApiService();
-  return AuthNotifier(apiService);
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
+  return AuthNotifier();
 });

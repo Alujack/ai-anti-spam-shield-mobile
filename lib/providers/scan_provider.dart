@@ -27,15 +27,19 @@ class ScanState {
   }
 }
 
-// Scan Provider
-class ScanNotifier extends StateNotifier<ScanState> {
-  final ApiService _apiService;
+// Scan Provider - using Riverpod 3.x Notifier
+class ScanNotifier extends Notifier<ScanState> {
+  late final ApiService _apiService;
 
-  ScanNotifier(this._apiService) : super(ScanState());
+  @override
+  ScanState build() {
+    _apiService = ApiService();
+    return ScanState();
+  }
 
   Future<void> scanText(String message) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await _apiService.scanText(message);
       state = state.copyWith(result: result, isLoading: false);
@@ -50,7 +54,7 @@ class ScanNotifier extends StateNotifier<ScanState> {
 
   Future<void> scanVoice(String audioPath) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await _apiService.scanVoice(audioPath);
       state = state.copyWith(result: result, isLoading: false);
@@ -68,9 +72,8 @@ class ScanNotifier extends StateNotifier<ScanState> {
   }
 }
 
-final scanProvider = StateNotifierProvider<ScanNotifier, ScanState>((ref) {
-  final apiService = ApiService();
-  return ScanNotifier(apiService);
+final scanProvider = NotifierProvider<ScanNotifier, ScanState>(() {
+  return ScanNotifier();
 });
 
 // Scan Statistics Provider

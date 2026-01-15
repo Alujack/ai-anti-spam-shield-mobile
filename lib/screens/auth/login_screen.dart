@@ -34,9 +34,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(authStateProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text,
+      await ref.read(authProvider.notifier).login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
           );
 
       if (mounted) {

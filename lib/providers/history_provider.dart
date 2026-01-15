@@ -35,22 +35,26 @@ class HistoryState {
   }
 }
 
-// History Notifier
-class HistoryNotifier extends StateNotifier<HistoryState> {
-  final ApiService _apiService;
+// History Notifier - using Riverpod 3.x Notifier
+class HistoryNotifier extends Notifier<HistoryState> {
+  late final ApiService _apiService;
 
-  HistoryNotifier(this._apiService) : super(HistoryState());
+  @override
+  HistoryState build() {
+    _apiService = ApiService();
+    return HistoryState();
+  }
 
   Future<void> loadHistory({int page = 1, int limit = 20, bool? isSpam}) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await _apiService.getScanHistory(
         page: page,
         limit: limit,
         isSpam: isSpam,
       );
-      
+
       final histories = result['histories'] as List<ScanHistory>;
       state = state.copyWith(
         histories: histories,
@@ -84,7 +88,6 @@ class HistoryNotifier extends StateNotifier<HistoryState> {
 }
 
 // History Provider
-final historyProvider = StateNotifierProvider<HistoryNotifier, HistoryState>((ref) {
-  final apiService = ApiService();
-  return HistoryNotifier(apiService);
+final historyProvider = NotifierProvider<HistoryNotifier, HistoryState>(() {
+  return HistoryNotifier();
 });

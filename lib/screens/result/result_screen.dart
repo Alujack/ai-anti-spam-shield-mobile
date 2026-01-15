@@ -142,7 +142,7 @@ class ResultScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       _buildDetailRow('Prediction', result.prediction.toUpperCase()),
-                      _buildDetailRow('Probability', '${(result.probability * 100).toStringAsFixed(1)}%'),
+                      _buildDetailRow('Confidence', '${(result.confidence * 100).toStringAsFixed(1)}%'),
                       if (result.details!['features'] != null) ...[
                         const Divider(height: 24),
                         _buildFeaturesSection(result.details!['features']),

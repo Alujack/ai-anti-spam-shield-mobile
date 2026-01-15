@@ -243,6 +243,107 @@ class ApiService {
     await StorageService.clearAll();
   }
 
+  // ============================================
+  // PHISHING DETECTION ENDPOINTS
+  // ============================================
+
+  /// Scan text for phishing
+  Future<Map<String, dynamic>> scanTextForPhishing(
+    String text, {
+    String scanType = 'auto',
+  }) async {
+    try {
+      final response = await _dio.post('/phishing/scan-text', data: {
+        'text': text,
+        'scanType': scanType,
+      });
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Scan URL for phishing
+  Future<Map<String, dynamic>> scanUrlForPhishing(String url) async {
+    try {
+      final response = await _dio.post('/phishing/scan-url', data: {
+        'url': url,
+      });
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Batch scan for phishing
+  Future<Map<String, dynamic>> batchScanForPhishing(
+    List<String> items, {
+    String scanType = 'auto',
+  }) async {
+    try {
+      final response = await _dio.post('/phishing/batch-scan', data: {
+        'items': items,
+        'scanType': scanType,
+      });
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get phishing scan history
+  Future<Map<String, dynamic>> getPhishingHistory({
+    int page = 1,
+    int limit = 20,
+    bool? phishingOnly,
+    String? threatLevel,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/phishing/history',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+          if (phishingOnly != null) 'phishingOnly': phishingOnly,
+          if (threatLevel != null) 'threatLevel': threatLevel,
+        },
+      );
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get phishing scan by ID
+  Future<Map<String, dynamic>> getPhishingHistoryById(String id) async {
+    try {
+      final response = await _dio.get('/phishing/history/$id');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Delete phishing scan from history
+  Future<Map<String, dynamic>> deletePhishingHistory(String id) async {
+    try {
+      final response = await _dio.delete('/phishing/history/$id');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get phishing detection statistics
+  Future<Map<String, dynamic>> getPhishingStatistics() async {
+    try {
+      final response = await _dio.get('/phishing/statistics');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Error handling helper
   String getErrorMessage(dynamic error) {
     if (error is DioException) {

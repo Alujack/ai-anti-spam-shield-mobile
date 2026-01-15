@@ -11,6 +11,8 @@ class AppConstants {
   static const String tokenKey = 'auth_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String userKey = 'user_data';
+  static const String themeModeKey = 'theme_mode';
+  static const String notificationsEnabledKey = 'notifications_enabled';
 
   // Routes
   static const String loginRoute = '/login';

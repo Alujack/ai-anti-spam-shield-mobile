@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../utils/colors.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -183,9 +186,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final settingsState = ref.watch(appSettingsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
@@ -206,7 +211,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.darkCard : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -235,18 +240,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const SizedBox(height: 16),
                     Text(
                       user?.name ?? 'User',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       user?.email ?? '',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -263,7 +268,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? AppColors.darkCard : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -276,12 +281,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Edit Profile',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -336,10 +341,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 duration: const Duration(milliseconds: 700),
                 child: _buildSection(
                   title: 'Account',
+                  isDark: isDark,
                   children: [
                     _buildSettingTile(
                       icon: Icons.edit,
                       title: 'Edit Profile',
+                      isDark: isDark,
                       onTap: () {
                         setState(() {
                           _isEditingProfile = true;
@@ -349,6 +356,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     _buildSettingTile(
                       icon: Icons.lock,
                       title: 'Change Password',
+                      isDark: isDark,
                       onTap: _showChangePasswordDialog,
                     ),
                   ],
@@ -363,32 +371,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               duration: const Duration(milliseconds: 800),
               child: _buildSection(
                 title: 'App',
+                isDark: isDark,
                 children: [
                   _buildSettingTile(
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',
+                    isDark: isDark,
                     trailing: Switch(
-                      value: true,
+                      value: settingsState.notificationsEnabled,
                       onChanged: (value) {
+                        ref.read(appSettingsProvider.notifier).setNotificationsEnabled(value);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Coming soon!')),
+                          SnackBar(
+                            content: Text(value ? 'Notifications enabled' : 'Notifications disabled'),
+                            backgroundColor: AppColors.success,
+                          ),
                         );
                       },
-                      activeThumbColor: AppColors.primary,
                     ),
                     onTap: null,
                   ),
                   _buildSettingTile(
                     icon: Icons.dark_mode_outlined,
                     title: 'Dark Mode',
+                    isDark: isDark,
                     trailing: Switch(
-                      value: false,
+                      value: settingsState.isDarkMode,
                       onChanged: (value) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Coming soon!')),
-                        );
+                        ref.read(appSettingsProvider.notifier).toggleDarkMode(value);
                       },
-                      activeThumbColor: AppColors.primary,
                     ),
                     onTap: null,
                   ),
@@ -403,18 +414,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               duration: const Duration(milliseconds: 900),
               child: _buildSection(
                 title: 'About',
+                isDark: isDark,
                 children: [
                   _buildSettingTile(
                     icon: Icons.info_outline,
                     title: 'About App',
+                    isDark: isDark,
                     onTap: () {
                       showAboutDialog(
                         context: context,
                         applicationName: 'AI Anti-Scam Shield',
                         applicationVersion: '1.0.0',
-                        applicationIcon: Icon(Icons.shield, size: 48, color: AppColors.primary),
-                        children: [
-                          const Text(
+                        applicationIcon: const Icon(Icons.shield, size: 48, color: AppColors.primary),
+                        children: const [
+                          Text(
                             'AI-powered protection against scams, phishing, and spam messages.',
                           ),
                         ],
@@ -424,18 +437,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildSettingTile(
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy Policy',
+                    isDark: isDark,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Privacy Policy - Coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
                       );
                     },
                   ),
                   _buildSettingTile(
                     icon: Icons.description_outlined,
                     title: 'Terms of Service',
+                    isDark: isDark,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Terms of Service - Coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const TermsOfServiceScreen()),
                       );
                     },
                   ),
@@ -464,7 +481,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 'Version 1.0.0',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary.withOpacity(0.5),
+                  color: (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary).withOpacity(0.5),
                 ),
               ),
             ),
@@ -477,10 +494,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildSection({
     required String title,
     required List<Widget> children,
+    bool isDark = false,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -497,10 +515,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textSecondary,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
           ),
@@ -515,6 +533,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String title,
     Widget? trailing,
     VoidCallback? onTap,
+    bool isDark = false,
   }) {
     return Material(
       color: Colors.transparent,
@@ -524,18 +543,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.textSecondary),
+              Icon(icon, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textPrimary,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                 ),
               ),
-              trailing ?? const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              trailing ?? Icon(Icons.chevron_right, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ],
           ),
         ),

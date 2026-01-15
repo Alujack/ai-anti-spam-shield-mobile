@@ -11,16 +11,21 @@ class ResultScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scanState = ref.watch(scanProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (scanState.result == null) {
       return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
         appBar: AppBar(
-          backgroundColor: AppColors.primary,
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.primary,
           title: const Text('Scan Result', style: TextStyle(color: Colors.white)),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: const Center(
-          child: Text('No scan result available'),
+        body: Center(
+          child: Text(
+            'No scan result available',
+            style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          ),
         ),
       );
     }
@@ -30,9 +35,9 @@ class ResultScreen extends ConsumerWidget {
     final confidence = (result.confidence * 100).toStringAsFixed(1);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.primary,
         elevation: 0,
         title: const Text(
           'Scan Result',
@@ -100,9 +105,9 @@ class ResultScreen extends ConsumerWidget {
                     // Confidence
                     Text(
                       'Confidence: $confidence%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
-                        color: AppColors.textSecondary,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -113,22 +118,78 @@ class ResultScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // Message Preview
-            FadeInUp(
-              duration: const Duration(milliseconds: 700),
-              child: _buildSection(
-                title: 'Message',
-                icon: Icons.message,
-                child: Text(
-                  result.message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
+            // Voice Scan Indicator (if applicable)
+            if (result.isVoiceScan) ...[
+              FadeInUp(
+                duration: const Duration(milliseconds: 650),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.mic, color: AppColors.primary, size: 24),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Voice message scanned and transcribed',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+            ],
+
+            // Transcribed Text (for voice scans)
+            if (result.isVoiceScan && result.transcribedText != null) ...[
+              FadeInUp(
+                duration: const Duration(milliseconds: 700),
+                child: _buildSection(
+                  title: 'Transcribed Voice Message',
+                  icon: Icons.record_voice_over,
+                  isDark: isDark,
+                  child: Text(
+                    result.transcribedText!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Message Preview (for text scans or fallback)
+            if (!result.isVoiceScan || result.message.isNotEmpty)
+              FadeInUp(
+                duration: const Duration(milliseconds: 700),
+                child: _buildSection(
+                  title: result.isVoiceScan ? 'Original Message' : 'Message',
+                  icon: Icons.message,
+                  isDark: isDark,
+                  child: Text(
+                    result.message,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 16),
 
@@ -139,13 +200,14 @@ class ResultScreen extends ConsumerWidget {
                 child: _buildSection(
                   title: 'Analysis Details',
                   icon: Icons.analytics,
+                  isDark: isDark,
                   child: Column(
                     children: [
-                      _buildDetailRow('Prediction', result.prediction.toUpperCase()),
-                      _buildDetailRow('Confidence', '${(result.confidence * 100).toStringAsFixed(1)}%'),
+                      _buildDetailRow('Prediction', result.prediction.toUpperCase(), isDark),
+                      _buildDetailRow('Confidence', '${(result.confidence * 100).toStringAsFixed(1)}%', isDark),
                       if (result.details!['features'] != null) ...[
                         const Divider(height: 24),
-                        _buildFeaturesSection(result.details!['features']),
+                        _buildFeaturesSection(result.details!['features'], isDark),
                       ],
                     ],
                   ),
@@ -160,7 +222,8 @@ class ResultScreen extends ConsumerWidget {
               child: _buildSection(
                 title: 'Risk Indicators',
                 icon: Icons.flag,
-                child: _buildRiskIndicators(result),
+                isDark: isDark,
+                child: _buildRiskIndicators(result, isDark),
               ),
             ),
 
@@ -215,21 +278,21 @@ class ResultScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.1),
+                    color: AppColors.warning.withOpacity(isDark ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.warning.withOpacity(0.3)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info, color: AppColors.warning, size: 24),
+                      const Icon(Icons.info, color: AppColors.warning, size: 24),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Do not respond to this message, click any links, or provide personal information. Block the sender and delete the message.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textSecondary,
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -247,11 +310,12 @@ class ResultScreen extends ConsumerWidget {
     required String title,
     required IconData icon,
     required Widget child,
+    bool isDark = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -270,10 +334,10 @@ class ResultScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
             ],
@@ -285,7 +349,7 @@ class ResultScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -293,17 +357,17 @@ class ResultScreen extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
         ],
@@ -311,36 +375,36 @@ class ResultScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeaturesSection(Map<String, dynamic> features) {
+  Widget _buildFeaturesSection(Map<String, dynamic> features, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Features Detected:',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
-        if (features['has_url'] == true) _buildFeatureChip('Contains URL', Icons.link),
-        if (features['has_email'] == true) _buildFeatureChip('Contains Email', Icons.email),
-        if (features['has_phone'] == true) _buildFeatureChip('Contains Phone', Icons.phone),
-        if (features['urgency_words'] == true) _buildFeatureChip('Urgency Words', Icons.warning),
-        if (features['spam_keywords'] == true) _buildFeatureChip('Spam Keywords', Icons.block),
-        if (features['currency_symbols'] == true) _buildFeatureChip('Money Symbols', Icons.attach_money),
+        if (features['has_url'] == true) _buildFeatureChip('Contains URL', Icons.link, isDark),
+        if (features['has_email'] == true) _buildFeatureChip('Contains Email', Icons.email, isDark),
+        if (features['has_phone'] == true) _buildFeatureChip('Contains Phone', Icons.phone, isDark),
+        if (features['urgency_words'] == true) _buildFeatureChip('Urgency Words', Icons.warning, isDark),
+        if (features['spam_keywords'] == true) _buildFeatureChip('Spam Keywords', Icons.block, isDark),
+        if (features['currency_symbols'] == true) _buildFeatureChip('Money Symbols', Icons.attach_money, isDark),
       ],
     );
   }
 
-  Widget _buildFeatureChip(String label, IconData icon) {
+  Widget _buildFeatureChip(String label, IconData icon, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.danger.withOpacity(0.1),
+          color: AppColors.danger.withOpacity(isDark ? 0.2 : 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -350,7 +414,7 @@ class ResultScreen extends ConsumerWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.danger,
                 fontWeight: FontWeight.w500,
@@ -362,12 +426,12 @@ class ResultScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRiskIndicators(result) {
+  Widget _buildRiskIndicators(result, bool isDark) {
     final List<Map<String, dynamic>> indicators = [];
 
     if (result.details != null && result.details!['features'] != null) {
       final features = result.details!['features'];
-      
+
       if (features['urgency_words'] == true) {
         indicators.add({
           'title': 'Urgency Tactics',
@@ -389,11 +453,11 @@ class ResultScreen extends ConsumerWidget {
     }
 
     if (indicators.isEmpty) {
-      return const Text(
+      return Text(
         'No specific risk indicators detected',
         style: TextStyle(
           fontSize: 14,
-          color: AppColors.textSecondary,
+          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
         ),
       );
     }
@@ -405,7 +469,7 @@ class ResultScreen extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.error, color: AppColors.danger, size: 20),
+              const Icon(Icons.error, color: AppColors.danger, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -413,17 +477,17 @@ class ResultScreen extends ConsumerWidget {
                   children: [
                     Text(
                       indicator['title'],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                     Text(
                       indicator['desc'],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                   ],

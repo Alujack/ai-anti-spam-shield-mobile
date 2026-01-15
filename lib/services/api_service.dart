@@ -141,10 +141,39 @@ class ApiService {
 
   Future<ScanResult> scanVoice(String audioPath) async {
     try {
+      // Determine content type based on file extension
+      final filename = audioPath.split('/').last;
+      final extension = filename.split('.').last.toLowerCase();
+      String contentType;
+      switch (extension) {
+        case 'm4a':
+        case 'aac':
+          contentType = 'audio/mp4';
+          break;
+        case 'mp3':
+          contentType = 'audio/mpeg';
+          break;
+        case 'wav':
+          contentType = 'audio/wav';
+          break;
+        case 'ogg':
+          contentType = 'audio/ogg';
+          break;
+        case 'flac':
+          contentType = 'audio/flac';
+          break;
+        case 'webm':
+          contentType = 'audio/webm';
+          break;
+        default:
+          contentType = 'audio/mpeg';
+      }
+
       final formData = FormData.fromMap({
         'audio': await MultipartFile.fromFile(
           audioPath,
-          filename: audioPath.split('/').last,
+          filename: filename,
+          contentType: DioMediaType.parse(contentType),
         ),
       });
 
